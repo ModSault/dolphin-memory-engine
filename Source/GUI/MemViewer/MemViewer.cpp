@@ -358,6 +358,114 @@ void MemViewer::contextMenuEvent(QContextMenuEvent* event)
             [this, indexMouse]() { addByteIndexAsWatch(indexMouse); });
     contextMenu->addAction(addSingleWatchAction);
 
+    // -----------------------------------------------
+    // Everything below is for a
+    // sub menu for changing how the memory is viewed
+    // -----------------------------------------------
+
+    QMenu* visualizeSubMenu = new QMenu("&View as", this);
+    contextMenu->addMenu(visualizeSubMenu);
+
+    QAction* visualize_oneByte = new QAction(tr("&One byte"));
+    connect(visualize_oneByte, &QAction::triggered, this,
+            [this]() { setMemType(Common::MemType::type_byte); });
+    visualizeSubMenu->addAction(visualize_oneByte);
+    if (m_type == Common::MemType::type_byte)
+      visualize_oneByte->setDisabled(true);
+
+    QAction* visualize_twoBytes = new QAction(tr("&Two bytes (Halfword)"));
+    connect(visualize_twoBytes, &QAction::triggered, this,
+            [this]() { setMemType(Common::MemType::type_halfword); });
+    visualizeSubMenu->addAction(visualize_twoBytes);
+    if (m_type == Common::MemType::type_halfword)
+      visualize_twoBytes->setDisabled(true);
+
+    QAction* visualize_fourBytes = new QAction(tr("&Four bytes (Word)"));
+    connect(visualize_fourBytes, &QAction::triggered, this,
+            [this]() { setMemType(Common::MemType::type_word); });
+    visualizeSubMenu->addAction(visualize_fourBytes);
+    if (m_type == Common::MemType::type_word)
+      visualize_fourBytes->setDisabled(true);
+
+    QAction* visualize_eightBytes = new QAction(tr("&Eight bytes (Doubleword)"));
+    connect(visualize_eightBytes, &QAction::triggered, this,
+            [this]() { setMemType(Common::MemType::type_doubleword); });
+    visualizeSubMenu->addAction(visualize_eightBytes);
+    if (m_type == Common::MemType::type_doubleword)
+      visualize_eightBytes->setDisabled(true);
+
+    QAction* visualize_float = new QAction(tr("&Float"));
+    connect(visualize_float, &QAction::triggered, this,
+            [this]() { setMemType(Common::MemType::type_float); });
+    visualizeSubMenu->addAction(visualize_float);
+    if (m_type == Common::MemType::type_float)
+      visualize_float->setDisabled(true);
+
+    QAction* visualize_double = new QAction(tr("&Double"));
+    connect(visualize_double, &QAction::triggered, this,
+            [this]() { setMemType(Common::MemType::type_double); });
+    visualizeSubMenu->addAction(visualize_double);
+    if (m_type == Common::MemType::type_double)
+      visualize_double->setDisabled(true);
+
+    QAction* visualize_ppc = new QAction(tr("&Assembly (PowerPC)"));
+    connect(visualize_ppc, &QAction::triggered, this,
+            [this]() { setMemType(Common::MemType::type_ppc); });
+    visualizeSubMenu->addAction(visualize_ppc);
+    if (m_type == Common::MemType::type_ppc)
+      visualize_ppc->setDisabled(true);
+
+    visualizeSubMenu->addSeparator();
+
+    QAction* visualize_signed = new QAction(tr("View as &Signed"));
+    connect(visualize_signed, &QAction::triggered, this, [this]() { setSigned(false); });
+    visualizeSubMenu->addAction(visualize_signed);
+    if (!m_isUnsigned)
+      visualize_signed->setDisabled(true);
+
+    QAction* visualize_unsigned = new QAction(tr("View as &Unsigned"));
+    connect(visualize_unsigned, &QAction::triggered, this, [this]() { setSigned(true); });
+    visualizeSubMenu->addAction(visualize_unsigned);
+    if (m_isUnsigned)
+      visualize_unsigned->setDisabled(true);
+
+    visualizeSubMenu->addSeparator();
+
+    QAction* visualize_decimal = new QAction(tr("View as &Decimal"));
+    connect(visualize_decimal, &QAction::triggered, this,
+            [this]() { setBase(Common::MemBase::base_decimal); });
+    visualizeSubMenu->addAction(visualize_decimal);
+    if (m_base == Common::MemBase::base_decimal)
+      visualize_decimal->setDisabled(true);
+
+    QAction* visualize_hexadecimal = new QAction(tr("View as &Hexadecimal"));
+    connect(visualize_hexadecimal, &QAction::triggered, this,
+            [this]() { setBase(Common::MemBase::base_hexadecimal); });
+    visualizeSubMenu->addAction(visualize_hexadecimal);
+    if (m_base == Common::MemBase::base_hexadecimal)
+      visualize_hexadecimal->setDisabled(true);
+
+    QAction* visualize_binary = new QAction(tr("View as &Binary"));
+    connect(visualize_binary, &QAction::triggered, this,
+            [this]() { setBase(Common::MemBase::base_binary); });
+    visualizeSubMenu->addAction(visualize_binary);
+    if (m_base == Common::MemBase::base_binary)
+      visualize_binary->setDisabled(true);
+
+    visualizeSubMenu->addSeparator();
+
+    QAction* visualize_absolute = new QAction(tr("Branch type &Absolute"));
+    connect(visualize_absolute, &QAction::triggered, this, [this]() { setBranchType(true); });
+    visualizeSubMenu->addAction(visualize_absolute);
+    if (m_absoluteBranch)
+      visualize_absolute->setDisabled(true);
+
+    QAction* visualize_relative = new QAction(tr("Branch type &Relative"));
+    connect(visualize_relative, &QAction::triggered, this, [this]() { setBranchType(false); });
+    visualizeSubMenu->addAction(visualize_relative);
+    if (!m_absoluteBranch)
+      visualize_relative->setDisabled(true);
+
     contextMenu->popup(viewport()->mapToGlobal(event->pos()));
   }
 }
