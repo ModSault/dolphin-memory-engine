@@ -958,14 +958,15 @@ void MemViewer::renderSeparatorLines(QPainter& painter) const
   painter.drawLine(0, m_columnHeaderHeight, m_hexAsciiSeparatorPosX + 17 * m_charWidthEm,
                    m_columnHeaderHeight);
 
+  int divide_amt = std::max(SConfig::getInstance().getViewerNbrBytesSeparator(), m_sizeOfType);
+
   if (SConfig::getInstance().getViewerNbrBytesSeparator() != 0)
   {
     int bytesSeparatorXPos = m_rowHeaderWidth - m_charWidthEm / 2 + m_charWidthEm / 4;
-    for (int i = 0; i < m_numColumns / SConfig::getInstance().getViewerNbrBytesSeparator() - 1; i++)
+    for (int i = 0; i < m_numColumns / divide_amt - 1; i++)
     {
-      bytesSeparatorXPos +=
-          (m_charWidthEm * m_digitsPerBox) * SConfig::getInstance().getViewerNbrBytesSeparator() +
-          (m_charWidthEm / 2) * SConfig::getInstance().getViewerNbrBytesSeparator();
+      bytesSeparatorXPos += (m_charWidthEm * m_digitsPerBox) * (divide_amt / m_sizeOfType) +
+                            (m_charWidthEm / 2) * (divide_amt / m_sizeOfType);
       painter.drawLine(bytesSeparatorXPos, 0, bytesSeparatorXPos,
                        m_columnHeaderHeight + m_hexAreaHeight);
     }
