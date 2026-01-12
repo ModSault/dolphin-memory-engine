@@ -192,12 +192,16 @@ MemViewer::bytePosFromMouse MemViewer::mousePosToBytePos(QPoint pos)
   QRect asciiArea(asciiAreaLeft, areaTop, m_charWidthEm * m_numColumns, m_charHeight * m_numRows);
 
   bytePosFromMouse bytePos;
+  bytePos.carrotIndex = 0;
 
   // Transform x and y to indices for column and row
   if (hexArea.contains(x, y, false))
   {
     bytePos.x = (x - hexAreaLeft) / hexCellWidth;
     m_editingHex = true;
+    bytePos.carrotIndex = ((x - hexAreaLeft) % hexCellWidth) / m_charWidthEm;
+    if (bytePos.carrotIndex >= m_digitsPerBox)
+      bytePos.carrotIndex = m_digitsPerBox - 1;
   }
   else if (asciiArea.contains(x, y, false))
   {
