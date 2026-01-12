@@ -404,6 +404,124 @@ void MemViewer::updateFontSize()
   m_columnHeaderHeight = m_charHeight + m_charWidthEm / 2;
 }
 
+void MemViewer::setMemType(Common::MemType type)
+{
+  m_type = type;
+  m_sizeOfType = static_cast<int>(Common::getSizeForType(type, 1));
+  updateDigitsPerBox();
+}
+
+void MemViewer::setBase(Common::MemBase base)
+{
+  m_base = base;
+  updateDigitsPerBox();
+}
+
+void MemViewer::setSigned(bool isUnsigned)
+{
+  m_isUnsigned = isUnsigned;
+  updateDigitsPerBox();
+}
+
+void MemViewer::setBranchType(bool absoluteBranch)
+{
+  m_absoluteBranch = absoluteBranch;
+  updateDigitsPerBox();
+}
+
+void MemViewer::updateDigitsPerBox()
+{
+  switch (m_type)
+  {
+  case Common::MemType::type_byte:
+    switch (m_base)
+    {
+    case Common::MemBase::base_decimal:
+      m_digitsPerBox = m_isUnsigned ? 3 : 4;
+      break;
+    case Common::MemBase::base_hexadecimal:
+      m_digitsPerBox = 2;
+      break;
+    case Common::MemBase::base_binary:
+      m_digitsPerBox = 8;
+      break;
+    case Common::MemBase::base_octal:
+    case Common::MemBase::base_none:
+      m_digitsPerBox = 2;  // Shouldn't ever reach here
+    }
+    break;
+  case Common::MemType::type_halfword:
+    switch (m_base)
+    {
+    case Common::MemBase::base_decimal:
+      m_digitsPerBox = m_isUnsigned ? 5 : 6;
+      break;
+    case Common::MemBase::base_hexadecimal:
+      m_digitsPerBox = 4;
+      break;
+    case Common::MemBase::base_binary:
+      m_digitsPerBox = 16;
+      break;
+    case Common::MemBase::base_octal:
+    case Common::MemBase::base_none:
+      m_digitsPerBox = 2;  // Shouldn't ever reach here
+    }
+    break;
+  case Common::MemType::type_word:
+    switch (m_base)
+    {
+    case Common::MemBase::base_decimal:
+      m_digitsPerBox = m_isUnsigned ? 10 : 11;
+      break;
+    case Common::MemBase::base_hexadecimal:
+      m_digitsPerBox = 8;
+      break;
+    case Common::MemBase::base_binary:
+      m_digitsPerBox = 32;
+      break;
+    case Common::MemBase::base_octal:
+    case Common::MemBase::base_none:
+      m_digitsPerBox = 2;  // Shouldn't ever reach here
+    }
+    break;
+  case Common::MemType::type_doubleword:
+    switch (m_base)
+    {
+    case Common::MemBase::base_decimal:
+      m_digitsPerBox = 20;
+      break;
+    case Common::MemBase::base_hexadecimal:
+      m_digitsPerBox = 16;
+      break;
+    case Common::MemBase::base_binary:
+      m_digitsPerBox = 64;
+      break;
+    case Common::MemBase::base_octal:
+    case Common::MemBase::base_none:
+      m_digitsPerBox = 2;  // Shouldn't ever reach here
+    }
+    break;
+  case Common::MemType::type_float:
+    m_digitsPerBox = 18;
+    break;
+  case Common::MemType::type_double:
+    m_digitsPerBox = 28;
+    break;
+  case Common::MemType::type_ppc:
+    m_digitsPerBox = 32;
+    break;
+  case Common::MemType::type_string:
+  case Common::MemType::type_byteArray:
+  case Common::MemType::type_struct:
+  case Common::MemType::type_none:
+    m_digitsPerBox = 2;  // Shouldn't ever reach here
+  }
+  m_carrotIndex = 0;
+  updateFontSize();
+  updateGeometry();
+  viewport()->update();
+}
+
 void MemViewer::scrollToSelection()
 {
   if (m_selectionType != SelectionType::downward)

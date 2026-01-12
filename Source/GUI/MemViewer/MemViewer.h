@@ -71,6 +71,11 @@ private:
   void initialise();
 
   void updateFontSize();
+  void setMemType(Common::MemType type);
+  void setBase(Common::MemBase base);
+  void setSigned(bool isUnsigned);
+  void setBranchType(bool absoluteBranch);
+  void updateDigitsPerBox();
   bytePosFromMouse mousePosToBytePos(QPoint pos);
   void scrollToSelection();
   void copySelection(Common::MemType type) const;
@@ -123,6 +128,13 @@ private:
   QRect* m_curosrRect{};
   QShortcut* m_copyShortcut{};
   QElapsedTimer m_elapsedTimer;
+
+  // variables for how memory is shown to user
+  Common::MemType m_type = Common::MemType::type_byte;
+  int m_sizeOfType = 1;
+  Common::MemBase m_base = Common::MemBase::base_hexadecimal;
+  bool m_isUnsigned = false;
+  bool m_absoluteBranch = true;  // true = absolute, false = relative
 
   StructTreeNode* m_structDefs;
 };
