@@ -103,6 +103,7 @@ private:
   int m_EndBytesSelectionPosY = 0;
   SelectionType m_selectionType = SelectionType::single;
   int m_charWidthEm = 0;
+  int m_digitsPerBox = 2;
   int m_charHeight = 0;
   int m_hexAreaWidth = 0;
   int m_hexAreaHeight = 0;

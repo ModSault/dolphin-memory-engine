@@ -184,7 +184,7 @@ MemViewer::bytePosFromMouse MemViewer::mousePosToBytePos(QPoint pos)
   int y = pos.y();
 
   const int spacing = m_charWidthEm / 2;
-  const int hexCellWidth = m_charWidthEm * 2 + spacing;
+  const int hexCellWidth = m_charWidthEm * m_digitsPerBox + spacing;
   const int hexAreaLeft = m_rowHeaderWidth - spacing / 2;
   const int asciiAreaLeft = m_hexAsciiSeparatorPosX + spacing;
   const int areaTop = m_columnHeaderHeight + m_charHeight - fontMetrics().overlinePos();
@@ -393,7 +393,7 @@ void MemViewer::updateFontSize()
 
   m_charWidthEm = fontMetrics().horizontalAdvance(QLatin1Char('M'));
   m_charHeight = fontMetrics().height();
-  m_hexAreaWidth = m_numColumns * (m_charWidthEm * 2 + m_charWidthEm / 2);
+  m_hexAreaWidth = m_numColumns * (m_charWidthEm * m_digitsPerBox + m_charWidthEm / 2);
   m_hexAreaHeight = m_numRows * m_charHeight;
   m_rowHeaderWidth = m_charWidthEm * (static_cast<int>(sizeof(u32)) * 2 + 1) + m_charWidthEm / 2;
   m_hexAsciiSeparatorPosX = m_rowHeaderWidth + m_hexAreaWidth;
@@ -842,7 +842,7 @@ void MemViewer::renderSeparatorLines(QPainter& painter) const
     for (int i = 0; i < m_numColumns / SConfig::getInstance().getViewerNbrBytesSeparator() - 1; i++)
     {
       bytesSeparatorXPos +=
-          (m_charWidthEm * 2) * SConfig::getInstance().getViewerNbrBytesSeparator() +
+          (m_charWidthEm * m_digitsPerBox) * SConfig::getInstance().getViewerNbrBytesSeparator() +
           (m_charWidthEm / 2) * SConfig::getInstance().getViewerNbrBytesSeparator();
       painter.drawLine(bytesSeparatorXPos, 0, bytesSeparatorXPos,
                        m_columnHeaderHeight + m_hexAreaHeight);
@@ -865,7 +865,7 @@ void MemViewer::renderColumnsHeaderText(QPainter& painter) const
     ss << std::hex << std::uppercase << byte;
     std::string headerText = "." + ss.str();
     painter.drawText(posXHeaderText, m_charHeight, QString::fromStdString(headerText));
-    posXHeaderText += m_charWidthEm * 2 + m_charWidthEm / 2;
+    posXHeaderText += m_charWidthEm * m_digitsPerBox + m_charWidthEm / 2;
   }
 
   painter.drawText(m_hexAsciiSeparatorPosX +
@@ -890,7 +890,7 @@ void MemViewer::renderRowHeaderText(QPainter& painter, const int rowIndex) const
 
 void MemViewer::renderCarret(QPainter& painter, const int rowIndex, const int columnIndex)
 {
-  int posXHex = m_rowHeaderWidth + (m_charWidthEm * 2 + m_charWidthEm / 2) * columnIndex;
+  int posXHex = m_rowHeaderWidth + (m_charWidthEm * m_digitsPerBox + m_charWidthEm / 2) * columnIndex;
   QColor oldPenColor = painter.pen().color();
   int carretPosX = posXHex + (m_carrotIndex ? m_charWidthEm : 0);
   painter.setPen(QColor(Qt::red));
@@ -947,14 +947,14 @@ void MemViewer::determineMemoryTextRenderProperties(const int rowIndex, const in
 void MemViewer::renderHexByte(QPainter& painter, const int rowIndex, const int columnIndex,
                               QColor& bgColor, QColor& fgColor, bool drawCarret)
 {
-  int posXHex = m_rowHeaderWidth + (m_charWidthEm * 2 + m_charWidthEm / 2) * columnIndex;
+  int posXHex = m_rowHeaderWidth + (m_charWidthEm * m_digitsPerBox + m_charWidthEm / 2) * columnIndex;
   std::string hexByte = Common::formatMemoryToString(
       m_updatedRawMemoryData + ((rowIndex * m_numColumns) + columnIndex),
       Common::MemType::type_byteArray, 1, Common::MemBase::base_none, true);
   QRect* currentByteRect = new QRect(posXHex,
                                      m_columnHeaderHeight + rowIndex * m_charHeight +
                                          (m_charHeight - fontMetrics().overlinePos()),
-                                     m_charWidthEm * 2, m_charHeight);
+                                     m_charWidthEm * m_digitsPerBox, m_charHeight);
 
   painter.fillRect(*currentByteRect, bgColor);
   if (drawCarret)
@@ -991,7 +991,7 @@ void MemViewer::renderMemory(QPainter& painter, const int rowIndex, const int co
 {
   QColor oldPenColor = painter.pen().color();
   QColor fgColor = QGuiApplication::palette().color(QPalette::WindowText);
-  int posXHex = m_rowHeaderWidth + (m_charWidthEm * 2 + m_charWidthEm / 2) * columnIndex;
+  int posXHex = m_rowHeaderWidth + (m_charWidthEm * m_digitsPerBox + m_charWidthEm / 2) * columnIndex;
   const bool validRange{
       m_currentFirstAddress + (m_numColumns * rowIndex + columnIndex) >= m_memViewStart &&
       m_currentFirstAddress + (m_numColumns * rowIndex + columnIndex) < m_memViewEnd};
