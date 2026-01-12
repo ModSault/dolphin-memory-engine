@@ -146,7 +146,7 @@ void MemViewer::jumpToAddress(const u32 address)
     std::fill(m_memoryMsElapsedLastChange, m_memoryMsElapsedLastChange + m_numCells, 0);
     updateMemoryData();
     std::memcpy(m_lastRawMemoryData, m_updatedRawMemoryData, m_numCells);
-    m_carretBetweenHex = false;
+    m_carrotIndex = 0;
 
     m_disableScrollContentEvent = true;
     verticalScrollBar()->setValue(static_cast<int>((address & 0xFFFFFFF0) - m_memViewStart) /
@@ -227,11 +227,13 @@ void MemViewer::mousePressEvent(QMouseEvent* event)
 
   const bool wasEditingHex = m_editingHex;
 
-  // Toggle carrot-between-hex when the same byte is clicked twice from the hex table
-  m_carretBetweenHex =
-      (m_editingHex && wasEditingHex && !m_carretBetweenHex &&
+  // Toggle carrot-index when the same byte is clicked twice from the hex table
+  m_carrotIndex =
+      (m_editingHex && wasEditingHex && m_carrotIndex != bytePos.carrotIndex &&
        m_StartBytesSelectionPosX == bytePos.x && m_StartBytesSelectionPosY == bytePos.y &&
-       m_EndBytesSelectionPosX == bytePos.x && m_EndBytesSelectionPosY == bytePos.y);
+       m_EndBytesSelectionPosX == bytePos.x && m_EndBytesSelectionPosY == bytePos.y) ?
+          bytePos.carrotIndex :
+          0;
 
   m_StartBytesSelectionPosX = bytePos.x;
   m_StartBytesSelectionPosY = bytePos.y;
@@ -715,7 +717,7 @@ bool MemViewer::handleNaviguationKey(const int key, bool shiftIsHeld)
   }
 
   // Always set the carrot at the start of a byte after navigating
-  m_carretBetweenHex = false;
+  m_carrotIndex = 0;
   return true;
 }
 
@@ -732,7 +734,7 @@ bool MemViewer::writeCharacterToSelectedMemory(char byteToWrite)
       byteToWrite -= '0';
 
     const char selectedMemoryValue = *(m_updatedRawMemoryData + memoryOffset);
-    if (m_carretBetweenHex)
+    if (m_carrotIndex)
       byteToWrite = static_cast<char>((static_cast<u32>(selectedMemoryValue) & 0xF0) |
                                       static_cast<u32>(byteToWrite));
     else
@@ -777,7 +779,7 @@ void MemViewer::keyPressEvent(QKeyEvent* event)
     }
 
     success = writeCharacterToSelectedMemory(value);
-    m_carretBetweenHex = !m_carretBetweenHex;
+    m_carrotIndex = (m_carrotIndex + 1) % 2;
   }
   else
   {
@@ -793,7 +795,7 @@ void MemViewer::keyPressEvent(QKeyEvent* event)
     return;
   }
 
-  if (!m_carretBetweenHex || !m_editingHex)
+  if (!m_carrotIndex || !m_editingHex)
     handleNaviguationKey(Qt::Key::Key_Right, false);
 
   updateMemoryData();
@@ -890,7 +892,7 @@ void MemViewer::renderCarret(QPainter& painter, const int rowIndex, const int co
 {
   int posXHex = m_rowHeaderWidth + (m_charWidthEm * 2 + m_charWidthEm / 2) * columnIndex;
   QColor oldPenColor = painter.pen().color();
-  int carretPosX = posXHex + (m_carretBetweenHex ? m_charWidthEm : 0);
+  int carretPosX = posXHex + (m_carrotIndex ? m_charWidthEm : 0);
   painter.setPen(QColor(Qt::red));
   painter.drawLine(carretPosX,
                    rowIndex * m_charHeight + (m_charHeight - fontMetrics().overlinePos()) +

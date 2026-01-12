@@ -64,6 +64,7 @@ private:
   {
     int x = 0;
     int y = 0;
+    int carrotIndex = 0;
     bool isInViewer = false;
   };
 
@@ -112,7 +113,7 @@ private:
   char* m_lastRawMemoryData = nullptr;
   int* m_memoryMsElapsedLastChange = nullptr;
   bool m_editingHex = false;
-  bool m_carretBetweenHex = false;
+  int m_carrotIndex = 0;
   bool m_disableScrollContentEvent = false;
   bool m_validMemory = false;
   u32 m_currentFirstAddress = 0;
