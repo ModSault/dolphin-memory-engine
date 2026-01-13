@@ -197,7 +197,7 @@ MemViewer::bytePosFromMouse MemViewer::mousePosToBytePos(QPoint pos)
   // Transform x and y to indices for column and row
   if (hexArea.contains(x, y, false))
   {
-    bytePos.x = (x - hexAreaLeft) / hexCellWidth;
+    bytePos.x = ((x - hexAreaLeft) / hexCellWidth) * m_sizeOfType;
     m_editingHex = true;
     bytePos.carrotIndex = ((x - hexAreaLeft) % hexCellWidth) / m_charWidthEm;
     if (bytePos.carrotIndex >= m_digitsPerBox)
@@ -656,7 +656,11 @@ void MemViewer::copySelection(const Common::MemType type) const
 {
   int indexStart = m_StartBytesSelectionPosY * m_numColumns + m_StartBytesSelectionPosX;
   int indexEnd = m_EndBytesSelectionPosY * m_numColumns + m_EndBytesSelectionPosX;
+  if (m_editingHex)
+    indexEnd += (m_sizeOfType - 1);
   size_t selectionLength = static_cast<size_t>(indexEnd - indexStart + 1);
+  if (m_editingHex)
+    selectionLength -= selectionLength % static_cast<size_t>(m_sizeOfType);
 
   char* selectedMem = new char[selectionLength];
   if (DolphinComm::DolphinAccessor::isValidConsoleAddress(m_currentFirstAddress))
@@ -722,7 +726,11 @@ void MemViewer::addSelectionAsArrayOfBytes()
 {
   int indexStart = m_StartBytesSelectionPosY * m_numColumns + m_StartBytesSelectionPosX;
   int indexEnd = m_EndBytesSelectionPosY * m_numColumns + m_EndBytesSelectionPosX;
+  if (m_editingHex)
+    indexEnd += (m_sizeOfType - 1);
   size_t selectionLength = static_cast<size_t>(indexEnd - indexStart + 1);
+  if (m_editingHex)
+    selectionLength -= selectionLength % static_cast<size_t>(m_sizeOfType);
 
   QString strLabel{QInputDialog::getText(this, "Enter the label of the new watch", "label")};
   if (!strLabel.isEmpty())
@@ -840,7 +848,10 @@ bool MemViewer::handleNaviguationKey(const int key, bool shiftIsHeld)
     {
       if (m_selectionType == SelectionType::downward && shiftIsHeld)
       {
-        m_EndBytesSelectionPosX--;
+        if (!m_editingHex)
+          m_EndBytesSelectionPosX--;
+        else
+          m_EndBytesSelectionPosX -= m_sizeOfType;
         if (m_EndBytesSelectionPosX < 0)
         {
           m_EndBytesSelectionPosX += m_numColumns;
@@ -853,7 +864,10 @@ bool MemViewer::handleNaviguationKey(const int key, bool shiftIsHeld)
       }
       else
       {
-        m_StartBytesSelectionPosX--;
+        if (!m_editingHex)
+          m_StartBytesSelectionPosX--;
+        else
+          m_StartBytesSelectionPosX -= m_sizeOfType;
         if (m_StartBytesSelectionPosX < 0)
         {
           m_StartBytesSelectionPosX += m_numColumns;
@@ -885,7 +899,10 @@ bool MemViewer::handleNaviguationKey(const int key, bool shiftIsHeld)
     {
       if (m_selectionType == SelectionType::upward && shiftIsHeld)
       {
-        m_StartBytesSelectionPosX++;
+        if (!m_editingHex)
+          m_StartBytesSelectionPosX++;
+        else
+          m_StartBytesSelectionPosX += m_sizeOfType;
         if (m_StartBytesSelectionPosX >= m_numColumns)
         {
           m_StartBytesSelectionPosX -= m_numColumns;
@@ -898,7 +915,10 @@ bool MemViewer::handleNaviguationKey(const int key, bool shiftIsHeld)
       }
       else
       {
-        m_EndBytesSelectionPosX++;
+        if (!m_editingHex)
+          m_EndBytesSelectionPosX++;
+        else
+          m_EndBytesSelectionPosX += m_sizeOfType;
         if (m_EndBytesSelectionPosX >= m_numColumns)
         {
           m_EndBytesSelectionPosX -= m_numColumns;
