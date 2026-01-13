@@ -1123,9 +1123,10 @@ void MemViewer::renderRowHeaderText(QPainter& painter, const int rowIndex) const
 
 void MemViewer::renderCarret(QPainter& painter, const int rowIndex, const int columnIndex)
 {
-  int posXHex = m_rowHeaderWidth + (m_charWidthEm * m_digitsPerBox + m_charWidthEm / 2) * columnIndex;
+  int posXHex = m_rowHeaderWidth +
+                (m_charWidthEm * m_digitsPerBox + m_charWidthEm / 2) * (columnIndex / m_sizeOfType);
   QColor oldPenColor = painter.pen().color();
-  int carretPosX = posXHex + (m_carrotIndex ? m_charWidthEm : 0);
+  int carretPosX = posXHex + (m_carrotIndex * m_charWidthEm);
   painter.setPen(QColor(Qt::red));
   painter.drawLine(carretPosX,
                    rowIndex * m_charHeight + (m_charHeight - fontMetrics().overlinePos()) +
