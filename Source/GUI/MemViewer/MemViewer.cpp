@@ -505,9 +505,8 @@ void MemViewer::updateFontSize()
 
   m_charWidthEm = fontMetrics().horizontalAdvance(QLatin1Char('M'));
   m_charHeight = fontMetrics().height();
-  m_hexAreaWidth = (m_numColumns / m_sizeOfType) *
-                   (m_charWidthEm * m_digitsPerBox +
-                    m_charWidthEm / 2);
+  m_hexAreaWidth =
+      (m_numColumns / m_sizeOfType) * (m_charWidthEm * m_digitsPerBox + m_charWidthEm / 2);
   m_hexAreaHeight = m_numRows * m_charHeight;
   m_rowHeaderWidth = m_charWidthEm * (static_cast<int>(sizeof(u32)) * 2 + 1) + m_charWidthEm / 2;
   m_hexAsciiSeparatorPosX = m_rowHeaderWidth + m_hexAreaWidth;
