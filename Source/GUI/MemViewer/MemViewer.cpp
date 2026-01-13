@@ -505,7 +505,9 @@ void MemViewer::updateFontSize()
 
   m_charWidthEm = fontMetrics().horizontalAdvance(QLatin1Char('M'));
   m_charHeight = fontMetrics().height();
-  m_hexAreaWidth = m_numColumns * (m_charWidthEm * m_digitsPerBox + m_charWidthEm / 2);
+  m_hexAreaWidth = (m_numColumns / m_sizeOfType) *
+                   (m_charWidthEm * m_digitsPerBox +
+                    m_charWidthEm / 2);
   m_hexAreaHeight = m_numRows * m_charHeight;
   m_rowHeaderWidth = m_charWidthEm * (static_cast<int>(sizeof(u32)) * 2 + 1) + m_charWidthEm / 2;
   m_hexAsciiSeparatorPosX = m_rowHeaderWidth + m_hexAreaWidth;
@@ -1222,7 +1224,8 @@ void MemViewer::renderMemory(QPainter& painter, const int rowIndex, const int co
 {
   QColor oldPenColor = painter.pen().color();
   QColor fgColor = QGuiApplication::palette().color(QPalette::WindowText);
-  int posXHex = m_rowHeaderWidth + (m_charWidthEm * m_digitsPerBox + m_charWidthEm / 2) * columnIndex;
+  int posXHex =
+      m_rowHeaderWidth + (m_charWidthEm * m_digitsPerBox + m_charWidthEm / 2) * columnIndex;
   const bool validRange{
       m_currentFirstAddress + (m_numColumns * rowIndex + columnIndex) >= m_memViewStart &&
       m_currentFirstAddress + (m_numColumns * rowIndex + columnIndex) < m_memViewEnd};
@@ -1243,8 +1246,34 @@ void MemViewer::renderMemory(QPainter& painter, const int rowIndex, const int co
 
     determineMemoryTextRenderProperties(rowIndex, columnIndex, drawCarret, bgColor, fgColor);
 
-    renderHexByte(painter, rowIndex, columnIndex, bgColor, fgColor, drawCarret);
     renderASCIIText(painter, rowIndex, columnIndex, bgColor, fgColor);
+    if (columnIndex % m_sizeOfType == 0)
+    {
+      QColor bgColor_cur = QColor(Qt::transparent);
+      QColor fgColor_cur = QGuiApplication::palette().color(QPalette::WindowText);
+      bool drawCarrot_cur = false;
+
+      // Check all bytes in larger data types to see what colors it should be
+      for (int i = 0; i < m_sizeOfType; i++)
+      {
+        determineMemoryTextRenderProperties(rowIndex, columnIndex + i, drawCarrot_cur, bgColor_cur,
+                                            fgColor_cur);
+        drawCarret = drawCarrot_cur | drawCarret;
+        if (bgColor_cur.rgb() ==
+            QColor(QGuiApplication::palette().color(QPalette::Highlight)).rgb())
+        {
+          bgColor = bgColor_cur;
+          fgColor = fgColor_cur;
+          break;
+        }
+        if (bgColor_cur.rgb() == QColor(Qt::red).rgb())
+        {
+          bgColor = bgColor_cur;
+          fgColor = fgColor_cur;
+        }
+      }
+      renderHexByte(painter, rowIndex, columnIndex, bgColor, fgColor, drawCarret);
+    }
   }
   painter.setPen(oldPenColor);
 }
