@@ -680,34 +680,123 @@ void MemViewer::copySelection(const Common::MemType type) const
   delete[] selectedMem;
 }
 
+QString MemViewer::getEditAllText() const
+{
+  switch (m_type)
+  {
+  case Common::MemType::type_byte:
+    switch (m_base)
+    {
+    case Common::MemBase::base_decimal:
+      return "Byte (in decimal)";
+    case Common::MemBase::base_hexadecimal:
+      return "Byte (in hex)";
+    case Common::MemBase::base_binary:
+      return "Byte (in binary)";
+    case Common::MemBase::base_octal:
+    case Common::MemBase::base_none:
+      break;
+    }
+    break;
+  case Common::MemType::type_halfword:
+    switch (m_base)
+    {
+    case Common::MemBase::base_decimal:
+      return "Halfword (in decimal)";
+    case Common::MemBase::base_hexadecimal:
+      return "Halfword (in hex)";
+    case Common::MemBase::base_binary:
+      return "Halfword (in binary)";
+    case Common::MemBase::base_octal:
+    case Common::MemBase::base_none:
+      break;
+    }
+    break;
+  case Common::MemType::type_word:
+    switch (m_base)
+    {
+    case Common::MemBase::base_decimal:
+      return "Word (in decimal)";
+    case Common::MemBase::base_hexadecimal:
+      return "Word (in hex)";
+    case Common::MemBase::base_binary:
+      return "Word (in binary)";
+    case Common::MemBase::base_octal:
+    case Common::MemBase::base_none:
+      break;
+    }
+    break;
+  case Common::MemType::type_doubleword:
+    switch (m_base)
+    {
+    case Common::MemBase::base_decimal:
+      return "Doubleword (in decimal)";
+    case Common::MemBase::base_hexadecimal:
+      return "Doubleword (in hex)";
+    case Common::MemBase::base_binary:
+      return "Doubleword (in binary)";
+    case Common::MemBase::base_octal:
+    case Common::MemBase::base_none:
+      break;
+    }
+    break;
+  case Common::MemType::type_float:
+    return "Float";
+  case Common::MemType::type_double:
+    return "Double";
+  case Common::MemType::type_ppc:
+    return "Power PC Assembly (Absolute branch not supported)";
+  case Common::MemType::type_string:
+  case Common::MemType::type_byteArray:
+  case Common::MemType::type_struct:
+  case Common::MemType::type_none:
+    break;
+  }
+  return "ERROR!!!";
+}
 void MemViewer::editSelection()
 {
   int indexStart = m_StartBytesSelectionPosY * m_numColumns + m_StartBytesSelectionPosX;
-  int indexEnd = m_EndBytesSelectionPosY * m_numColumns + m_EndBytesSelectionPosX;
+  int indexEnd =
+      m_EndBytesSelectionPosY * m_numColumns + m_EndBytesSelectionPosX + (m_sizeOfType - 1);
   size_t selectionLength = static_cast<size_t>(indexEnd - indexStart + 1);
+  selectionLength -= selectionLength % static_cast<size_t>(m_sizeOfType);
 
-  QString strByte = QInputDialog::getText(this, "Enter the new byte", "Byte (in hex)");
+  QString strByte = QInputDialog::getText(this, "Enter the value", getEditAllText());
   if (!strByte.isEmpty())
   {
-    QRegularExpression hexMatcher("^[0-9A-F]{1,2}$", QRegularExpression::CaseInsensitiveOption);
-    QRegularExpressionMatch match = hexMatcher.match(strByte);
-    if (!match.hasMatch())
+    Common::MemOperationReturnCode return_code = Common::MemOperationReturnCode::OK;
+    size_t len_actual = 0;
+    const Common::MemBase base =
+        (m_type == Common::MemType::type_double || m_type == Common::MemType::type_float) ?
+            Common::MemBase::base_decimal :
+            m_base;
+    char* one_set_mem = Common::formatStringToMemory(return_code, len_actual, strByte.toStdString(),
+                                                     base, m_type, m_sizeOfType, 0U);
+
+    if (return_code != Common::MemOperationReturnCode::OK || len_actual == 0)
     {
-      QMessageBox* errorBox =
-          new QMessageBox(QMessageBox::Critical, "Invalid byte",
-                          QString::fromStdString("The byte is an invalid hexadecimal number"),
-                          QMessageBox::Ok, this);
+      QMessageBox* errorBox = new QMessageBox(
+          QMessageBox::Critical, "Invalid input",
+          QString::fromStdString("The input you gave is invalid"), QMessageBox::Ok, this);
       errorBox->exec();
+      delete[] one_set_mem;
       return;
     }
 
-    std::stringstream ss(strByte.toStdString());
-    ss >> std::hex;
-    int byte = 0;
-    ss >> byte;
+    if (Common::shouldBeBSwappedForType(m_type))
+    {
+      for (size_t i = 0; i < len_actual / 2; i++)
+      {
+        char temp = one_set_mem[i];
+        one_set_mem[i] = one_set_mem[len_actual - i - 1];
+        one_set_mem[len_actual - i - 1] = temp;
+      }
+    }
 
     char* newMem = new char[selectionLength];
-    std::memset(newMem, byte, selectionLength);
+    for (size_t i = 0; i < selectionLength; i += len_actual)
+      std::memcpy(newMem + i, one_set_mem, len_actual);
     if (DolphinComm::DolphinAccessor::isValidConsoleAddress(m_currentFirstAddress + indexStart))
     {
       if (!DolphinComm::DolphinAccessor::writeToRAM(
@@ -718,6 +807,7 @@ void MemViewer::editSelection()
         emit memErrorOccured();
       }
     }
+    delete[] one_set_mem;
     delete[] newMem;
   }
 }
