@@ -1067,27 +1067,52 @@ bool MemViewer::writeCharacterToSelectedMemory(char byteToWrite)
 {
   const size_t memoryOffset =
       ((m_StartBytesSelectionPosY * m_numColumns) + m_StartBytesSelectionPosX);
-  if (m_editingHex)
-  {
-    // Convert ascii to actual value
-    if (byteToWrite >= 'A')
-      byteToWrite -= 'A' - 10;
-    else if (byteToWrite >= '0')
-      byteToWrite -= '0';
-
-    const char selectedMemoryValue = *(m_updatedRawMemoryData + memoryOffset);
-    if (m_carrotIndex)
-      byteToWrite = static_cast<char>((static_cast<u32>(selectedMemoryValue) & 0xF0) |
-                                      static_cast<u32>(byteToWrite));
-    else
-      byteToWrite = static_cast<char>((static_cast<u32>(selectedMemoryValue) & 0x0F) |
-                                      (static_cast<u32>(byteToWrite) << 4));
-  }
-
   const u32 offsetToWrite{
       Common::dolphinAddrToOffset(m_currentFirstAddress + static_cast<u32>(memoryOffset),
                                   DolphinComm::DolphinAccessor::isARAMAccessible())};
-  return DolphinComm::DolphinAccessor::writeToRAM(offsetToWrite, &byteToWrite, 1, false);
+  if (m_editingHex)
+  {
+    std::string mem_str = memToStrFormatted(m_StartBytesSelectionPosY, m_StartBytesSelectionPosX);
+    if (m_type != Common::MemType::type_double && m_type != Common::MemType::type_float)
+    {
+      std::replace(mem_str.begin(), mem_str.end(), ' ', '0');
+    }
+    else
+    {
+      std::string::iterator letter_e = std::find(mem_str.begin(), mem_str.end(), 'e');
+      std::replace(mem_str.begin(), letter_e, ' ', '0');
+      if (byteToWrite == '.')
+      {
+        size_t index = mem_str.find('.');
+        if (index != std::string::npos)
+        {
+          mem_str.erase(index, 1);
+        }
+      }
+    }
+    if (static_cast<size_t>(m_carrotIndex) > mem_str.size())
+      mem_str.insert(mem_str.end(), m_carrotIndex - mem_str.size() + 1, '0');
+    mem_str[m_carrotIndex] = byteToWrite;
+
+    Common::MemOperationReturnCode return_code = Common::MemOperationReturnCode::OK;
+    size_t len_actual = 0;
+    const Common::MemBase base =
+        (m_type == Common::MemType::type_double || m_type == Common::MemType::type_float) ?
+            Common::MemBase::base_decimal :
+            m_base;
+    char* new_mem =
+        Common::formatStringToMemory(return_code, len_actual, mem_str, base, m_type, m_sizeOfType,
+                                     m_absoluteBranch ? static_cast<u32>(memoryOffset) : 0U);
+    bool toReturn = DolphinComm::DolphinAccessor::writeToRAM(
+        offsetToWrite, new_mem, len_actual, Common::shouldBeBSwappedForType(m_type));
+    delete[] new_mem;
+    return toReturn;
+  }
+  else
+  {
+    // Editing ASCII section
+    return DolphinComm::DolphinAccessor::writeToRAM(offsetToWrite, &byteToWrite, 1, false);
+  }
 }
 
 void MemViewer::keyPressEvent(QKeyEvent* event)
@@ -1114,14 +1139,32 @@ void MemViewer::keyPressEvent(QKeyEvent* event)
     const std::string hexChar = event->text().toUpper().toStdString();
     const char value = hexChar[0];
     const bool ishex{('0' <= value && value <= '9') || ('A' <= value && value <= 'F')};
-    if (!ishex)
+    const bool isFloatChars{('0' <= value && value <= '9') || ('-' == value) || ('.' == value)};
+    const bool isdecUnsigned{('0' <= value && value <= '9') || ('-' == value)};
+    const bool isdecSigned{('0' <= value && value <= '9')};
+    const bool isbin{('0' <= value && value <= '1')};
+
+    const bool isFloatOrDouble =
+        m_type == Common::MemType::type_float || m_type == Common::MemType::type_double;
+    const bool invalid_hex =
+        !isFloatOrDouble && (m_base == Common::MemBase::base_hexadecimal && !ishex);
+    const bool invalid_floatChars = isFloatOrDouble && !isFloatChars;
+    const bool invalid_decUnsigned = !isFloatOrDouble && (m_base == Common::MemBase::base_decimal &&
+                                                          !m_isUnsigned && !isdecUnsigned);
+    const bool invalid_decSigned = !isFloatOrDouble && (m_base == Common::MemBase::base_decimal &&
+                                                        m_isUnsigned && !isdecSigned);
+    const bool invalid_binary =
+        !isFloatOrDouble && (m_base == Common::MemBase::base_binary && !isbin);
+
+    if (m_type == Common::MemType::type_ppc || invalid_hex || invalid_floatChars ||
+        invalid_decUnsigned || invalid_decSigned || invalid_binary)
     {
       QApplication::beep();
       return;
     }
 
     success = writeCharacterToSelectedMemory(value);
-    m_carrotIndex = (m_carrotIndex + 1) % 2;
+    m_carrotIndex = (m_carrotIndex + 1) % m_digitsPerBox;
   }
   else
   {
