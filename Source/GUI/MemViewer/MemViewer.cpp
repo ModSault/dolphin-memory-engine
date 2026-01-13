@@ -1177,18 +1177,60 @@ void MemViewer::determineMemoryTextRenderProperties(const int rowIndex, const in
   }
 }
 
+std::string MemViewer::memToStrFormatted(const int rowIndex, const int columnIndex) const
+{
+  const bool is_double = m_type == Common::MemType::type_double;
+  const bool is_float = m_type == Common::MemType::type_float;
+  const bool is_ppc = m_type == Common::MemType::type_ppc;
+  const bool isUnsigned = m_base == Common::MemBase::base_decimal ? m_isUnsigned : true;
+  const Common::MemBase base =
+      (is_ppc || is_float || is_double) ? Common::MemBase::base_decimal : m_base;
+  const u32 address = m_currentFirstAddress + ((rowIndex * m_numColumns) + columnIndex);
+
+  std::string toReturn = Common::formatMemoryToString(
+      m_updatedRawMemoryData + ((rowIndex * m_numColumns) + columnIndex), m_type,
+      Common::getSizeForType(m_type, 1), base, isUnsigned, Common::shouldBeBSwappedForType(m_type),
+      m_absoluteBranch ? address : 0U);
+
+  if (base != Common::MemBase::base_decimal &&
+      toReturn.size() < static_cast<size_t>(m_digitsPerBox))
+    toReturn.insert(0, m_digitsPerBox - toReturn.size(), '0');
+
+  if (is_float || is_double)
+  {
+    if (toReturn.find(".") == std::string::npos)
+      toReturn += ".00";
+
+    // give space to type a new value 10 times larger
+    if (toReturn[0] == '-')
+      toReturn = "- " + toReturn.substr(1);
+    else
+      toReturn = " " + toReturn;
+  }
+  else if (m_type != Common::MemType::type_ppc && base == Common::MemBase::base_decimal &&
+           toReturn.size() < static_cast<size_t>(m_digitsPerBox))
+  {
+    // pad decimal values to be right aligned (don't do if float or double)
+    bool starting_index = (toReturn.find('-') != (size_t)-1);
+    toReturn.insert(starting_index, m_digitsPerBox - toReturn.size(), ' ');
+  }
+
+  if (toReturn.length() > static_cast<size_t>(m_digitsPerBox))
+    toReturn = toReturn.substr(0, m_digitsPerBox);
+
+  return toReturn;
+}
+
 void MemViewer::renderHexByte(QPainter& painter, const int rowIndex, const int columnIndex,
                               QColor& bgColor, QColor& fgColor, bool drawCarret)
 {
-  int posXHex = m_rowHeaderWidth + (m_charWidthEm * m_digitsPerBox + m_charWidthEm / 2) * columnIndex;
-  std::string hexByte = Common::formatMemoryToString(
-      m_updatedRawMemoryData + ((rowIndex * m_numColumns) + columnIndex),
-      Common::MemType::type_byteArray, 1, Common::MemBase::base_none, true);
+  int posXHex = m_rowHeaderWidth +
+                (m_charWidthEm * m_digitsPerBox + m_charWidthEm / 2) * (columnIndex / m_sizeOfType);
+  std::string hexByte = memToStrFormatted(rowIndex, columnIndex);
   QRect* currentByteRect = new QRect(posXHex,
                                      m_columnHeaderHeight + rowIndex * m_charHeight +
                                          (m_charHeight - fontMetrics().overlinePos()),
                                      m_charWidthEm * m_digitsPerBox, m_charHeight);
-
   painter.fillRect(*currentByteRect, bgColor);
   if (drawCarret)
     renderCarret(painter, rowIndex, columnIndex);

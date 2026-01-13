@@ -97,6 +97,7 @@ private:
   void renderCarret(QPainter& painter, int rowIndex, int columnIndex);
   void determineMemoryTextRenderProperties(int rowIndex, int columnIndex, bool& drawCarret,
                                            QColor& bgColor, QColor& fgColor);
+  std::string memToStrFormatted(const int rowIndex, const int columnIndex);
 
   const int m_numRows = 16;
   const int m_numColumns = 16;  // Should be a multiple of 16, or the header doesn't make much sense
