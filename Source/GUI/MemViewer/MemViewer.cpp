@@ -1091,7 +1091,7 @@ void MemViewer::renderColumnsHeaderText(QPainter& painter) const
   painter.drawText(static_cast<int>(static_cast<double>(m_charWidthEm) * 1.5), m_charHeight,
                    tr("Address"));
   int posXHeaderText = m_rowHeaderWidth;
-  for (int i = 0; i < m_numColumns; i++)
+  for (int i = 0; i < m_numColumns; i += m_sizeOfType)
   {
     std::stringstream ss;
     const u32 byte{(m_currentFirstAddress + static_cast<u32>(i)) & 0xF};
