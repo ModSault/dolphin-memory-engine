@@ -1284,7 +1284,8 @@ void MemViewer::renderSeparatorLines(QPainter& painter) const
                    m_columnHeaderHeight + m_hexAreaHeight);
   painter.drawLine(m_rowHeaderWidth - m_charWidthEm / 2, 0, m_rowHeaderWidth - m_charWidthEm / 2,
                    m_columnHeaderHeight + m_hexAreaHeight);
-  painter.drawLine(0, m_columnHeaderHeight, m_hexAsciiSeparatorPosX + 17 * m_charWidthEm,
+  painter.drawLine(0, m_columnHeaderHeight,
+                   m_hexAsciiSeparatorPosX + (std::max(m_numColumns, 13))*m_charWidthEm,
                    m_columnHeaderHeight);
 
   int divide_amt = std::max(SConfig::getInstance().getViewerNbrBytesSeparator(), m_sizeOfType);
@@ -1292,7 +1293,7 @@ void MemViewer::renderSeparatorLines(QPainter& painter) const
   if (SConfig::getInstance().getViewerNbrBytesSeparator() != 0)
   {
     int bytesSeparatorXPos = m_rowHeaderWidth - m_charWidthEm / 2 + m_charWidthEm / 4;
-    for (int i = 0; i < m_numColumns / divide_amt - 1; i++)
+    for (int i = 0; i < m_numColumns / divide_amt - 1 + (m_numColumns % divide_amt != 0); i++)
     {
       bytesSeparatorXPos += (m_charWidthEm * m_digitsPerBox) * (divide_amt / m_sizeOfType) +
                             (m_charWidthEm / 2) * (divide_amt / m_sizeOfType);
@@ -1320,8 +1321,9 @@ void MemViewer::renderColumnsHeaderText(QPainter& painter) const
     posXHeaderText += m_charWidthEm * m_digitsPerBox + m_charWidthEm / 2;
   }
 
+  double amtBuffer = std::max(0.5, (m_numColumns - 12.0) / 2.0 + 0.5);
   painter.drawText(m_hexAsciiSeparatorPosX +
-                       static_cast<int>(static_cast<double>(m_charWidthEm) * 2.5),
+                       static_cast<int>(static_cast<double>(m_charWidthEm) * amtBuffer),
                    m_charHeight, tr("Text (ASCII)"));
   painter.drawText(0, 0, 0, 0, 0, QString());
   painter.setPen(oldPenColor);
